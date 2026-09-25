@@ -555,11 +555,25 @@ int iDevice, iType;
 int main(int argc, char *argv[])
 {
 int iBus;
+int iStartBus, iEndBus;
 DIR *pDir;
+char *s;
 struct dirent *pDE;
 uint32_t u32Buses = 0; // available I2C bus numbers (0-31)
 
-        printf("ls_i2c - smart i2c bus interrogration by Larry Bank\n");
+        if (argc != 2) {
+            printf("ls_i2c - smart i2c bus interrogration by Larry Bank\n");
+            printf("Usage: ./ls_i2c <bus number>\n");
+            printf("Use a bus number of 'a' to scan all buses sequentially\n");
+            printf("./ls_i2c a\n./ls_i2c 1\n");
+            return 0;
+        }
+        s = argv[1];
+        if (s[0] == 'a' || s[0] == 'A') {
+            iStartBus = 0; iEndBus = 31;
+        } else {
+            iStartBus = iEndBus = atoi(s);
+        } 
 	// I2C buses in Linux are defined as a file in the /dev directory
         pDir = opendir("/dev");
 	if (!pDir) {
@@ -580,8 +594,14 @@ uint32_t u32Buses = 0; // available I2C bus numbers (0-31)
 	    printf("to ensure that I2C is enabled.\n");
 	    return -1;
 	}
+        if (iStartBus == iEndBus && (u32Buses & (1<<iStartBus)) == 0) {
+            printf("The bus you specified (/dev/i2c-%d) does not exist!\n", iStartBus);
+            printf("Check your system configuration (e.g. raspi-config)\n");
+            printf("to ensure that I2C is enabled.\n");
+            return -1;
+        }
 	// Search each I2C bus for a supported proximited sensor
-        for (iBus=0; iBus<32; iBus++) {
+        for (iBus=iStartBus; iBus<=iEndBus; iBus++) {
 	    if (u32Buses & (1<<iBus)) { // a bus that we found in /dev
 		printf("Searching /dev/i2c-%d...", iBus);
                 if (!I2CFindDevices(iBus)) { // scan for recognized devices
