@@ -65,6 +65,10 @@ enum {
   DEVICE_MMC5603,
   DEVICE_RV3032,
   DEVICE_RV3028,
+  DEVICE_SHTC3,
+  DEVICE_APDS9930,
+  DEVICE_APDS9960,
+  DEVICE_LTR553,
   DEVICE_COUNT
 };
 
@@ -86,6 +90,7 @@ enum {
   DEVICE_TYPE_PMU,
   DEVICE_TYPE_EEPROM,
   DEVICE_TYPE_KEYBOARD,
+  DEVICE_TYPE_PROXIMITY,
   DEVICE_TYPE_COUNT
 };
 
@@ -96,12 +101,12 @@ static const char *szDeviceNames[] = {
    "LIS3DSH","INA219","SHT3X","HDC1080","MPU6886","BME680", "AXP202", "AXP192",
    "24AAXXXE64", "DS1307", "MPU688X", "FT6236G", "FT6336G", "FT6336U", "FT6436",
    "BM8563", "BNO055", "AHT20","TMF882X","SCD4X", "ST25DV", "LTR390", "BMP388",
-   "MMC5603","RV3032","RV3028"
+   "MMC5603","RV3032","RV3028","SHTC3","APDS9930","APDS9960","LTR553"
 };
 static const char *szDeviceTypes[] = {
   "Unknown", "Environmental sensor", "IMU", "Light sensor", "TOF Distance", "Realtime clock",
   "Nearfield Comm", "Barcode reader", "Display", "Power measurement", "ADC", "DAC",
-  "Capacitive touch", "Power management", "EEPROM", "Keyboard"
+  "Capacitive touch", "Power management", "EEPROM", "Keyboard", "Proximity sensor"
 };
 
 //
@@ -191,6 +196,34 @@ int iDevice = DEVICE_UNKNOWN;
       }
   }
  
+  if (i == 0x70) { // SHTC3?
+      cTemp[0] = 0xef; cTemp[1] = 0xc8; // Read ID command   
+      I2CWrite(file_i2c, i, cTemp, 2);
+      I2CRead(file_i2c, i, cTemp, 3); // read status bits
+      if ((cTemp[1] & 0x3f) == 7) { // yes, it's the SHTC3
+          *pType = DEVICE_TYPE_ENVIRO;
+          return DEVICE_SHTC3;
+      }
+  }
+
+  if (i == 0x23) { // LTR553?
+      I2CReadRegister(file_i2c, i, 0x86, cTemp, 1); // get ID
+      if (cTemp[0] == 0x92) {
+          *pType = DEVICE_TYPE_PROXIMITY;
+          return DEVICE_LTR553;
+      }
+  }
+  if (i == 0x39) { // APDS99xx?
+      I2CReadRegister(file_i2c, i, 0x80 | 0x12, cTemp, 1); // get ID
+      if (cTemp[0] == 0x39) {
+          *pType = DEVICE_TYPE_PROXIMITY;
+          return DEVICE_APDS9930;
+      } else if (cTemp[0] == 0xab || cTemp[0] == 0x9e) {
+          *pType = DEVICE_TYPE_PROXIMITY;
+          return DEVICE_APDS9960;
+      }
+  }
+
   if (i == 0x38) { // Probably a FT6236G/FT6336G/FT6336U/FT6436 touch screen controller chip
                  //  - likely 0x39 address valid as well but no test HW to verify
     // first check for AHT20 Temp+Humid sensor
@@ -208,9 +241,10 @@ int iDevice = DEVICE_UNKNOWN;
         iDevice = DEVICE_FT6336U;
     else if (cTemp[0] == 0x03)
         iDevice = DEVICE_FT6436;
-    if (iDevice != DEVICE_UNKNOWN)
+    if (iDevice != DEVICE_UNKNOWN) {
         *pType = DEVICE_TYPE_CAP_TOUCH;
         return iDevice;
+    }
   }
   
   if (i >= 0x40 && i <= 0x4f) { // check for TI INA219 power measurement sensor
@@ -506,7 +540,11 @@ int iDevice, iType;
                 iType = DEVICE_TYPE_UNKNOWN;
                 iDevice = I2CDiscoverDevice(file_i2c, iAddr, &iType);
                 if (iTotal == 1) printf("\n"); // first device
-                printf("0x%02x: %s, %s\n", iAddr, szDeviceNames[iDevice], szDeviceTypes[iType]);
+                if (iDevice == DEVICE_UNKNOWN) {
+                    printf("0x%02x: %s\n", iAddr, szDeviceNames[iDevice]);
+                } else {
+                    printf("0x%02x: %s, %s\n", iAddr, szDeviceNames[iDevice], szDeviceTypes[iType]);
+                }
             }
         }
     } // for each address
