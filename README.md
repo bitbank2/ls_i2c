@@ -6,7 +6,7 @@ email: bitbank@pobox.com<br>
 The ls_i2c tool is meant as a friendlier and more functional replacement for the ancient Linux i2cdetect. The tool can scan multiple I2C buses at once and has the ability to auto-detect a growing list of popular I2C devices. The output is a neat list of detected addresses with device info (model and type) if it's one of the 50+ recognized devices. It uses the device address as a starting point and then matches unique info such as the WHO_AM_I register to determine what devices are responding.<br>
 
 ## Why did you write it?
-Lately I've been doing a lot of work on my sensor libraries and have run into some frustrating problems with getting the I2C overlays to work my collection of Linux SBCs. I have had to run i2cdetect many times and every time I did, it made me think there must be a better way to display that info. Making use of some code I wrote for my Arduino BitBang_I2C library turned out to be the right way to approach the problem. The result is a tool that I'm much happier to use and hopefully you'll feel the same way.<br>
+Lately I've been doing a lot of work on my sensor libraries and have run into some frustrating problems with getting the I2C overlays to work on my collection of Linux SBCs. I have had to run i2cdetect many times and every time I did, it made me think there must be a better way to display that info. Making use of some code I wrote for my Arduino BitBang_I2C library turned out to be the right way to approach the problem. The result is a tool I find much more useful.<br>
 
 ## How does it look?
 See the images below to compare the output of i2cdetect (top) versus ls_i2c (bottom) for the same machine and sensors.<br>
