@@ -168,7 +168,7 @@ int iDevice = DEVICE_UNKNOWN;
       if (cTemp[0] == 0x8) { // SH1106 
           *pType = DEVICE_TYPE_DISPLAY;
           iDevice = DEVICE_SH1106;
-      } else if (cTemp[0] == 3 || cTemp[0] == 6) {
+      } else if (cTemp[0] == 3 || cTemp[0] == 5 || cTemp[0] == 6) {
           *pType = DEVICE_TYPE_DISPLAY;
           iDevice = DEVICE_SSD1306;
       }
